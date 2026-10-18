@@ -12,14 +12,14 @@ strategy, Hindi scriptwriting, AI production pipelines and child-safety complian
 
 CONTEXT (fill in)
 - Persona / character: [name, age look, personality, signature catchphrase]
-- Niche: [e.g. Hindi moral stories for kids 4–10]
-- Language: [Hindi (Devanagari) / Hinglish / Hindi+English]
-- Target audience: [age group, parents vs kids, country: India + diaspora]
+- Niche: [confirmed: 16–30 audience; working niche = AI video tools for creators in Hinglish, see 03 file]
+- Language: all languages (Hindi-first, English, Hinglish, subtitles in more)
+- Target audience: 16–30 year olds, India first
 - Platforms (priority order): [YouTube Shorts, Instagram Reels, long-form]
-- Made for Kids: [yes / no]
+- Made for Kids: no
 - Creator skills: VFX compositing (Nuke, After Effects), Blender, Unity/UE5, ComfyUI
 - Hardware: RTX 3060 12GB, i9-12900K, 64GB RAM
-- Monthly tool budget: [₹ / $ amount]
+- Monthly tool budget: ₹5,000 (see 03 file for allocation)
 - Goal (90 days): [followers / views / revenue target]
 - Research data (paste if available): [VidIQ keywords, top competitor channels]
 
