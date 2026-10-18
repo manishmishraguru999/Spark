@@ -187,6 +187,29 @@ policy-safe way to reach the same outcome.
 Top 15 risks (policy, legal, technical, financial, reputational, burnout), each with
 likelihood, impact, early warning sign, mitigation, and source where applicable.
 
+### M11 — Viral niches and big-creator growth tactics
+A. Viral-with-few-videos channels:
+- Find 20+ channels (2025–2026) that went viral with fewer than 30 videos, Shorts first.
+  Use outlier/breakout data (vidIQ Outliers, Nexlev, Social Blade, Playboard, viewstats).
+  For each: niche, format, first-upload date, uploads, subs, top video views, hook,
+  title pattern, thumbnail/first-frame style, and whether AI-made.
+- Starting leads to verify (from Nexlev, Oct 2026): pet-psychology explainers
+  (ZawPolyShorts, DiloPolyShorts), recurring AI character (猫のミミ / Mimi),
+  numbered series ("Earth 6030 future"), transformations (X Edit, Aura Frame),
+  ranking formats (HeroRanking), Indian AI miniature cooking ASMR (Miniature Dollverse,
+  Nazin Tiny Food, Create Clay).
+- Separate durable niches from one-hit spikes. Note survivorship bias.
+- Which of these patterns transfer to a Hinglish AI persona for 16–30 in India?
+B. Big-creator tactics:
+- What top creators (MrBeast, Indian creators like BeerBiceps, Dhruv Rathee, CarryMinati,
+  Mythpat, Technical Guruji, Nikhil Sharma) are documented to do on packaging, hooks,
+  retention, series, collaborations, community, posting cadence. Use interviews,
+  creator podcasts, official YouTube Creator Insider/Liaison statements, and the
+  reported MrBeast production guide (label it unofficial).
+- Shorts-specific: viewed vs swiped, loops, first-frame motion, captions, length,
+  posting time. Official YouTube statements first.
+- Output: "Tactic → evidence → how a solo AI-persona creator applies it ethically".
+
 ## HOW TO USE YOUR FULL CAPABILITIES
 - Browse widely and deeply: at least 40 distinct sources, prioritizing official ones.
   Re-search when the first results are thin, old or contradictory.
