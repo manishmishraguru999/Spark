@@ -385,3 +385,73 @@ Assumed 21 hrs/week ≈ 90 hrs/month के हिसाब से **A थोड
 3. Persona: इंसान जैसा realistic चेहरा चाहिए, या stylized/3D? Realistic होने पर Instagram profile label और लोगों का trust दोनों ज़्यादा sensitive होते हैं।
 4. Monetization में पहले क्या चाहिए: ads, brand deals, या अपना digital product?
 5. Long-form YouTube (8 videos/month) सच में करना है, या शुरुआत में सिर्फ़ Shorts/Reels? सिर्फ़ Shorts से खर्च और समय दोनों ~40% कम होंगे (INFERENCE)।
+
+---
+
+## 10. Update 1 (2026-10-21): User के जवाबों के बाद बदलाव
+
+**नए confirmed inputs:**
+1. PC पूरे हफ़्ते **हमेशा on** रहेगा।
+2. **ChatGPT का paid subscription पहले से है।** Plan का नाम नहीं बताया गया; मैंने Plus माना है।
+3. Character **realistic इंसान जैसा** होगा (एक synthetic इंसान, कोई असली व्यक्ति नहीं)।
+
+### 10.1 Cost पर असर (code से recalculated)
+
+बदलाव:
+- ChatGPT का खर्च हटाया, क्योंकि वह पहले से paid है।
+- Always-on PC की idle बिजली जोड़ी: 45–70W at wall। यह component data से INFERENCE है, नापा नहीं गया।
+- Realistic चेहरे की वजह से lip-sync retries +0.5 बढ़ाए।
+
+| Retry scenario | A Local-first | B Paid-cloud-first | **C Hybrid** | C के GPU घंटे |
+|---|---|---|---|---|
+| Low | ₹443–572 | ₹15,043–15,187 | ₹1,424–1,556 | 60 |
+| **Typical** | ₹492–617 | ₹15,690–15,834 | **₹1,494–1,623** | 76 |
+| High | ₹587–704 | ₹18,859–19,003 | ₹1,615–1,738 | 105 |
+
+**मतलब (INFERENCE):**
+- PC हर महीने ~720 घंटे on रहेगा, इसलिए GPU time अब कोई रुकावट नहीं है। 76–105 GPU घंटे रात भर की queue में आसानी से हो जाएँगे।
+- Hero shots भी local Wan से बनाए जाएँ तो Kling (~₹836) भी हटाया जा सकता है। तब C लगभग A जितना सस्ता हो जाएगा।
+- **असली रुकावट अब GPU नहीं, आपका human time है** (review, retries चुनना, edit)।
+- 24×7 idle बिजली ~₹230–360/month है। Queue खाली होने पर Windows को auto-sleep पर रखें, तो यह और घटेगा।
+- **Budget reserve:** अगर local lip-sync realistic चेहरे पर ठीक न लगे, तो HeyGen Creator ($29 ≈ ₹2,755, REPORTED) जोड़ें। तब C ≈ ₹4,300 बनेगा, जो budget के अंदर है।
+
+### 10.2 ChatGPT subscription का इस्तेमाल
+
+- **Scripts, research, hook variations, captions (Hindi/Hinglish):** extra खर्च नहीं।
+- **Character reference images:** ChatGPT की image generation से शुरुआती face concepts बन सकते हैं। Outputs के commercial rights OpenAI terms में देखें (इस session में verify नहीं हुआ)।
+- **Sora video:** 2024 launch पर Plus में सीमित Sora videos शामिल थे (REPORTED)। **2026 में India में Plus पर Sora मिलता है या नहीं, यह UNKNOWN है।** अपने account में check करें। अगर मिलता है, तो यह hero shots का एक बिना extra खर्च वाला option है।
+
+### 10.3 Realistic character: ज़रूरी नियम (सबसे अहम)
+
+| # | नियम | क्यों | Status / Source |
+|---|---|---|---|
+| 1 | चेहरा **पूरी तरह synthetic** हो। किसी असली इंसान (celebrity या आम व्यक्ति) की photos से LoRA train न करें, और न किसी का चेहरा copy करें। | Delhi HC ने AI deepfakes के ख़िलाफ़ कई personality-rights orders दिए हैं: Kajol (Feb 2026), R Madhavan (Dec 2025), Vijay Deverakonda और Kangana Ranaut (Oct 2026 reports), Anil Kapoor (2023)। Pattern: 72 घंटे में takedown के आदेश। | REPORTED: storyboard18.com, livelaw.in, oecd.ai |
+| 2 | Final face को reverse image search से check करें कि वह किसी असली व्यक्ति से मिलता न हो। | Accidental resemblance का risk | INFERENCE (best practice) |
+| 3 | **Instagram:** profile पर "AI-generated profile" label on करें। | Unlabeled AI-person profiles recommendations से बाहर हो सकते हैं। एक source के अनुसार अभी सिर्फ़ US में लागू है (India status UNKNOWN), फिर भी label लगाएँ। | REPORTED: creators.instagram.com/blog/ai-generated-profile-label (Sep 2026 coverage) |
+| 4 | **YouTube:** हर upload पर "altered or synthetic content" setting on करें, क्योंकि realistic दिखने वाला इंसान इस नियम में आता है। | Disclose न करने पर YouTube खुद label लगा सकता है; repeat होने पर action हो सकता है। | VERIFIED rule page: support.google.com/youtube/answer/14328491 |
+| 5 | **India IT Rules (SGI):** synthetic content की labelling (20 Feb 2026 से)। | Legal requirement (platforms पर, और users declare करें) | REPORTED |
+| 6 | Bio में साफ़ लिखें: "AI-generated character · Content by [आपका नाम/brand]"। | Trust; "धोखा" वाले comments से बचाव | INFERENCE |
+| 7 | Character कभी यह दावा न करे कि वह असली इंसान है, और न झूठे "असली ज़िंदगी" के अनुभव बताए। Health, finance या legal advice न दे। | YouTube की inauthentic-content guidance में AI personas द्वारा sensitive topics को risk group बताया गया है। | REPORTED (पिछली research) |
+| 8 | Brand deals में "Paid partnership" tool + ASCI disclosure, और साफ़ बताएँ कि influencer virtual है। | ASCI virtual-influencer rules | UNKNOWN (verify करें) |
+
+### 10.4 Realistic character के technical असर (INFERENCE, not tested)
+
+- **Lip-sync अब सबसे बड़ा risk है।** Realistic चेहरे पर ज़रा सी गड़बड़ी भी "uncanny" लगती है। इसलिए benchmark में MuseTalk बनाम LatentSync 1.5 बनाम HeyGen (free tier) **सबसे पहले** चलाएँ।
+- **Identity consistency:** एक synthetic चेहरे की 20–40 images बनाकर character LoRA train करें। Checkpoint का license ज़रूर check करें: FLUX.1 dev के local outputs का commercial use CONFLICT है; FLUX.1 schnell Apache 2.0 है (REPORTED)।
+- **आपकी VFX skill यहाँ बड़ा फ़ायदा है:** Nuke/AE में face cleanup, grain और skin texture matching, relighting और edge fixes से AI artifacts छिप सकते हैं। ज़्यादातर AI-influencer channels यह नहीं कर पाते।
+- **Format का सुझाव:** हर Reel में talking-head 10–15 सेकंड तक रखें, बाकी what-if visuals। इससे lip-sync पर निर्भरता और retries दोनों कम होंगे।
+
+### 10.5 Updated handoff (section 9 के ऊपर मान्य)
+
+| Item | Updated value |
+|---|---|
+| Persona | Realistic, पूरी तरह synthetic इंसानी host ("curious, fact-checked what-if presenter")। Gender अभी तय नहीं; benchmark में 2 चेहरे test करें। |
+| Stack | C Hybrid, local-heavy: ChatGPT (existing) · Sarvam Bulbul v3 या ElevenLabs · ComfyUI + character LoRA · MuseTalk / LatentSync 1.5 (रात की queue) · Wan 2.2 5B (रात की queue) · Kling/Sora सिर्फ़ ज़रूरत पर · Resolve + Nuke/AE cleanup · Whisper subtitles |
+| Monthly cash | Typical ~₹1,500–1,620; realistic lip-sync के लिए cloud avatar लेना पड़े तो ~₹4,300 तक |
+| Compliance | IG AI-generated profile label · YT altered-content setting हर upload पर · bio disclosure · कोई असली चेहरा/आवाज़ नहीं |
+| Benchmark priority | (1) Lip-sync realism (2) Hindi voice (3) Identity consistency (4) Wan on 12GB |
+
+### 10.6 अभी भी open (2 सवाल)
+
+1. ChatGPT का कौन सा plan है (Go, Plus या Pro)? और आपके account में Sora मिलता है?
+2. हफ़्ते में **आप खुद** कितने घंटे दे सकते हो? PC के घंटे तय हो गए, लेकिन review और edit का समय अभी भी सबसे बड़ा constraint है।
