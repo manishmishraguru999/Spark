@@ -2,7 +2,7 @@
 
 Telegram से script भेजो → BEAST PC पर voice, images, clips, lip-sync और captions बनते हैं → 480p preview phone पर आता है → ✅ Approve → तय समय पर Instagram + Facebook पर post होता है, और YouTube file phone पर upload के लिए तैयार मिलती है।
 
-**Status:** Code इस repo में test हो चुका है (18 automated tests, Linux पर)। आपके Windows PC पर अभी नहीं चलाया गया है। पहला run नीचे के Step 5 (demo) से करें।
+**Status:** Code इस repo में test हो चुका है (27 automated tests, Linux पर)। आपके Windows PC पर अभी नहीं चलाया गया है। पहला run नीचे के Step 5 (demo) से करें।
 
 ---
 
@@ -92,6 +92,7 @@ venv\Scripts\python run_pipeline.py --config config.yaml --demo
   - Google का नियम: बिना audit वाले API project से uploads private पर lock रहते हैं। Audit पास होने के बाद `mode: api` करें; तब `containsSyntheticMedia=true` अपने-आप set होगा।
 - **Instagram:** Professional account बनाएँ। developers.facebook.com पर App बनाएँ → Instagram API (Instagram Login) → अपने account को **Instagram Tester** बनाएँ → access token लें → `setx IG_ACCESS_TOKEN "..."` चलाएँ और `ig_user_id` दें। Token हर ~50 दिन पर अपने-आप refresh होगा।
 - **Facebook Page:** उसी App से Page access token लें (permissions: `pages_manage_posts`, `pages_read_engagement`, `pages_show_list`), फिर `setx FB_PAGE_TOKEN "..."` चलाएँ और `page_id` दें।
+- **बाकी platforms** (Threads, Pinterest, Telegram Channel, X, Snapchat, Moj, ShareChat, Josh, WhatsApp Channel, LinkedIn): `config.yaml` में `enabled: true` करें। पूरी list, limits और नया platform जोड़ने का तरीका `PLATFORMS.md` में है। जिनका API नहीं है, उनकी video और caption `05_published/manual/<platform>/` में तैयार मिलेंगे।
 - **Profile पर एक बार manually:** Instagram पर "AI-generated profile" label, और Bio में "AI-generated character" लिखें।
 
 ### Step 11: Auto-start

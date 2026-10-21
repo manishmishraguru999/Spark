@@ -15,8 +15,8 @@ from .jobs import (CANCELLED, FAILED, PUBLISHED, PUBLISHING, REVIEW, RUNNING, SC
                    JobStore)
 from .lipsync import cut_audio, lipsync
 from .media import ffmpeg_bin, run
-from .publish.meta import publish_facebook, publish_instagram, refresh_instagram_token
-from .publish.youtube import publish_youtube
+from .publish.meta import refresh_instagram_token
+from .publish.registry import PLATFORMS, PublishContext, check_duration, resolve
 from .schedule import fmt, next_slot
 from .script_parser import Script, ScriptError, parse_script
 from .tts import synthesize
@@ -229,21 +229,22 @@ class Pipeline:
             [("❌ Cancel", f"cancel:{job.id}")]])
 
     # ---------- publish side ----------
-    def caption(self, script: Script) -> str:
-        parts = [script.caption or script.title]
+    def base_caption(self, script: Script) -> str:
         disclosure = self.cfg.get("publish.disclosure_line", "")
-        if disclosure:
-            parts.append(disclosure)
-        if script.tags:
-            parts.append(" ".join(script.tags))
-        return "\n\n".join(parts)
+        return "\n\n".join(p for p in (script.caption or script.title, disclosure) if p)
 
-    def meta_cfg(self, key: str) -> dict:
+    def caption(self, script: Script) -> str:
+        return "\n\n".join(p for p in (self.base_caption(script), " ".join(script.tags)) if p)
+
+    def platform_cfg(self, key: str) -> dict:
         c = dict(self.cfg.get(f"publish.{key}", {}) or {})
         stored = self.store.kv_get("ig_token") if key == "instagram" else ""
         if stored:
             c["access_token"] = stored
         return c
+
+    def enabled_platforms(self) -> list[str]:
+        return [p for p in PLATFORMS if self.cfg.get(f"publish.{p}.enabled", False)]
 
     def publish_due(self) -> bool:
         did = False
@@ -255,23 +256,25 @@ class Pipeline:
             self.store.save(job)
             script, video = Script.from_dict(job.script), Path(job.results["render"])
             done = job.results.setdefault("published", {})
-            caption, dry = self.caption(script), bool(self.cfg.get("publish.dry_run", True))
-            targets = [p for p in ("youtube", "instagram", "facebook")
-                       if self.cfg.get(f"publish.{p}.enabled", False) and p not in done]
-            errors = []
-            for p in targets:
+            dry = bool(self.cfg.get("publish.dry_run", True))
+            errors, skipped = [], []
+            for p in [p for p in self.enabled_platforms() if p not in done]:
+                ctx = PublishContext(platform=p, job_id=job.id, video=video, title=script.title,
+                                     caption=self.base_caption(script), tags=script.tags,
+                                     cfg=self.platform_cfg(p), root=self.cfg.root)
                 try:
-                    if dry:
+                    too_long = check_duration(ctx)
+                    if too_long:
+                        done[p] = {"platform": p, "skipped": too_long}
+                        skipped.append(f"{PLATFORMS[p].label}: {too_long}")
+                    elif dry:
                         done[p] = {"platform": p, "dry_run": True}
-                    elif p == "youtube":
-                        done[p] = publish_youtube(self.cfg.get("publish.youtube"), video, script.title, caption,
-                                                  script.tags, job.id)
-                    elif p == "instagram":
-                        done[p] = publish_instagram(self.meta_cfg("instagram"), video, caption)
                     else:
-                        done[p] = publish_facebook(self.meta_cfg("facebook"), video, caption, script.title)
+                        done[p] = resolve(p, ctx.cfg)(ctx)
                 except Exception as exc:
                     errors.append(f"{p}: {exc}")
+            if skipped:
+                self.notify("⏭️ Skip: " + "; ".join(skipped))
             if errors:
                 job.attempts += 1
                 job.error = "; ".join(errors)
@@ -285,16 +288,24 @@ class Pipeline:
                 record = self.cfg.path("05_published") / f"{job.id}.json"
                 record.write_text(json.dumps({"id": job.id, "script": job.script, "published": done},
                                              ensure_ascii=False, indent=2), encoding="utf-8")
-                links = "\n".join(f"• {k}: {v.get('url') or v.get('path') or ('dry-run' if v.get('dry_run') else v.get('id'))}"
-                                  for k, v in done.items())
-                manual = " (YouTube: phone से upload करें)" if done.get("youtube", {}).get("manual") else ""
-                self.notify(f"🚀 Published {job.id}{manual}\n{links}")
+                self.notify(f"🚀 Published {job.id}\n" + "\n".join(self.describe(k, v) for k, v in done.items()))
             self.store.save(job)
         return did
 
+    @staticmethod
+    def describe(platform: str, res: dict) -> str:
+        label = PLATFORMS[platform].label
+        if res.get("skipped"):
+            return f"• {label}: skipped"
+        if res.get("dry_run"):
+            return f"• {label}: dry-run"
+        if res.get("manual"):
+            return f"• {label}: 📲 phone से post करें ({Path(res['path']).name})"
+        return f"• {label}: {res.get('url') or res.get('id')}"
+
     def maintenance(self) -> None:
         """Refresh the Instagram long-lived token every ~50 days (Instagram Login only)."""
-        ig = self.meta_cfg("instagram")
+        ig = self.platform_cfg("instagram")
         if not (self.cfg.get("publish.instagram.enabled") and self.cfg.get("publish.instagram.auto_refresh_token")
                 and ig.get("access_token")):
             return

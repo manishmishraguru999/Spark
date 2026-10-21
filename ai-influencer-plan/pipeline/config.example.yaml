@@ -86,3 +86,48 @@ publish:
     version: "v25.0"
     page_id: ""
     page_access_token: "ENV:FB_PAGE_TOKEN"
+  # ---- बाकी platforms (हर एक का enabled: true करते ही वह pipeline में जुड़ जाएगा) ----
+  # mode: manual  → video + तैयार caption 05_published/manual/<platform>/ में, phone पर checklist
+  telegram_channel:
+    enabled: false
+    bot_token: "ENV:TELEGRAM_BOT_TOKEN"   # bot को channel का admin बनाएँ
+    channel_id: "@your_channel"
+  threads:
+    enabled: false
+    mode: manual                          # API के लिए public video URL चाहिए (public_dir + public_base_url)
+    graph_host: "https://graph.threads.net"
+    version: "v1.0"
+    user_id: ""
+    access_token: "ENV:THREADS_TOKEN"
+    public_dir: ""
+    public_base_url: ""
+  pinterest:
+    enabled: false
+    access_token: "ENV:PINTEREST_TOKEN"
+    board_id: ""
+    cover_frame_sec: 1
+  x:
+    enabled: false
+    mode: manual                          # X API अब pay-per-use है
+  bluesky:
+    enabled: false
+    mode: manual
+  snapchat:
+    enabled: false
+    mode: manual                          # API सिर्फ़ Business account के लिए
+  moj:
+    enabled: false
+    mode: manual
+  sharechat:
+    enabled: false
+    mode: manual
+  josh:
+    enabled: false
+    mode: manual
+  whatsapp_channel:
+    enabled: false
+    mode: manual
+  linkedin:
+    enabled: false
+    mode: manual
+  # tiktok: India में banned — enable न करें
