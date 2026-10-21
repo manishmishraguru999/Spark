@@ -17,6 +17,10 @@ class FakeResponse:
         self.content = content or (json.dumps(data).encode() if data is not None else b"")
         self.text = self.content.decode(errors="replace")
 
+    def raise_for_status(self):
+        if self.status_code >= 400:
+            raise RuntimeError(f"HTTP {self.status_code}")
+
     def json(self):
         if self._data is None:
             raise ValueError("no json")
@@ -53,6 +57,7 @@ def cfg(tmp_path):
     data["tts"]["provider"] = "silent"
     data["telegram"]["allowed_chat_ids"] = [42]
     data["video"]["font"] = "DejaVu Sans"
+    data["housekeeping"]["min_free_gb"] = 0.1
     data["publish"]["youtube"]["manual_sync_dir"] = str(tmp_path / "AI" / "yt_sync")
     p = tmp_path / "config.yaml"
     p.write_text(yaml.safe_dump(data, allow_unicode=True), encoding="utf-8")

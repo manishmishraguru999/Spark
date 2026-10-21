@@ -9,7 +9,7 @@ import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
 
-STAGES = ("tts", "images", "clips", "lipsync", "assemble", "preview")
+STAGES = ("check", "tts", "images", "clips", "lipsync", "assemble", "label", "qc", "preview")
 
 # status values
 RUNNING, REVIEW, SCHEDULED, PUBLISHING, PUBLISHED, FAILED, CANCELLED = (
@@ -44,6 +44,8 @@ class JobStore:
                 script TEXT, seed INTEGER, results TEXT, error TEXT,
                 scheduled_at REAL, attempts INTEGER DEFAULT 0);
             CREATE TABLE IF NOT EXISTS kv (key TEXT PRIMARY KEY, value TEXT);
+            CREATE TABLE IF NOT EXISTS ideas (id INTEGER PRIMARY KEY AUTOINCREMENT, created_at REAL,
+                text TEXT, used INTEGER DEFAULT 0);
         """)
 
     def create(self, script: dict, seed: int | None = None) -> Job:
@@ -84,4 +86,18 @@ class JobStore:
 
     def kv_set(self, key: str, value: str) -> None:
         self.db.execute("INSERT OR REPLACE INTO kv VALUES (?,?)", (key, value))
+        self.db.commit()
+
+    # ---------- idea bank ----------
+    def add_idea(self, text: str) -> int:
+        cur = self.db.execute("INSERT INTO ideas (created_at, text) VALUES (?, ?)", (time.time(), text))
+        self.db.commit()
+        return int(cur.lastrowid)
+
+    def ideas(self, include_used: bool = False) -> list[tuple[int, str, int]]:
+        q = "SELECT id, text, used FROM ideas" + ("" if include_used else " WHERE used=0") + " ORDER BY id"
+        return [(r["id"], r["text"], r["used"]) for r in self.db.execute(q)]
+
+    def mark_idea(self, idea_id: int, used: bool = True) -> None:
+        self.db.execute("UPDATE ideas SET used=? WHERE id=?", (int(used), idea_id))
         self.db.commit()

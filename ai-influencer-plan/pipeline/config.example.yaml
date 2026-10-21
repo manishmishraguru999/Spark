@@ -53,6 +53,37 @@ video:
   music: null                          # licensed track का path, या null
   music_volume: 0.12
 
+safety:                              # render से पहले script check (GPU time बचता है)
+  blocked_words: []                    # ये शब्द हों तो job रुक जाएगा
+  blocked_names: []                    # असली लोग/brands जिनका नाम नहीं आना चाहिए (personality rights)
+  # sensitive_words: [...]             # default list: health/finance/legal advice शब्द (warning)
+  min_words: 35
+  max_words: 220
+  ollama:                              # optional: PC पर free local AI review
+    enabled: false
+    url: "http://127.0.0.1:11434"
+    model: "qwen2.5:7b-instruct"       # कोई भी instruct model जो Ollama में pull किया हो
+
+qc:                                    # final video की automatic जाँच
+  max_black_ratio: 0.2                 # 20% से ज़्यादा black → fail
+  max_silence_ratio: 0.15              # 15% से ज़्यादा खामोशी → warning
+  lufs_range: [-17.0, -11.0]           # Shorts/Reels के लिए loudness range
+
+provenance:                            # file के अंदर AI label
+  note: "AI-generated content (synthetic presenter). Made with AI tools."
+  c2patool: ""                         # optional: c2patool.exe का path (Content Credentials)
+  generator: "BEAST pipeline"
+  source_type: composite               # composite (AI + edit) | full (पूरा AI)
+
+housekeeping:
+  min_free_gb: 30                      # इससे कम disk बचे तो rendering रुक जाएगी
+  keep_job_days: 14                    # published jobs के working folders इतने दिन बाद साफ़
+
+reports:
+  enabled: true
+  time: "09:00"                        # रोज़ सुबह phone पर report
+  youtube_api_key: "ENV:YOUTUBE_API_KEY"   # optional: public views के लिए (Google Cloud API key)
+
 schedule:
   timezone: "Asia/Kolkata"
   publish_times: ["19:00"]             # एक दिन में कई slots: ["13:00", "19:00"]

@@ -12,7 +12,7 @@
 | Deep-research prompts (4 AI, platform-neutral) | Done (`research-prompts/`, copy page artifact) |
 | Local बनाम paid research report + cost model | Done (`claude_research_report.md`, `cost_model.py`) |
 | Pipeline architecture | Done (`10_AUTOMATED_PIPELINE_PHONE_CONTROL.md`) |
-| Pipeline code | Done (`pipeline/`); 27 tests pass on Linux; **BEAST/Windows पर अभी नहीं चला** |
+| Pipeline code | v2 done (`pipeline/`): safety gate, auto QC, AI metadata/C2PA, disk guard, daily report, idea bank, doctor, new-project, setup.ps1; 42 tests pass on Linux; **BEAST/Windows पर अभी नहीं चला** |
 | Multi-platform | Plugin registry: YouTube, Instagram, Facebook, Threads, Pinterest, Telegram Channel (API); X, Bluesky, Snapchat, Moj, ShareChat, Josh, WhatsApp Channel, LinkedIn (manual); TikTok blocked (India) — `pipeline/PLATFORMS.md` |
 | Benchmark (voice / lip-sync / face) | Planned, not run |
 | Persona | Realistic, fully synthetic human host; gender undecided; "what-if / अनोखे facts" (provisional) |

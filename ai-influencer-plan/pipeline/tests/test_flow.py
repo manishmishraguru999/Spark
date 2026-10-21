@@ -2,7 +2,7 @@
 import json
 from pathlib import Path
 
-from beast.jobs import CANCELLED, PUBLISHED, REVIEW, RUNNING, SCHEDULED
+from beast.jobs import CANCELLED, PUBLISHED, REVIEW, RUNNING, SCHEDULED, STAGES
 from beast.media import duration, video_size
 from beast.worker import Pipeline
 
@@ -98,7 +98,7 @@ def test_redo_and_cancel(cfg, store):
     seed = job.seed
     pipe.handle_update(press(42, f"redo_img:{job.id}"))
     job = store.get(job.id)
-    assert job.status == RUNNING and job.stage == 1 and job.seed != seed
+    assert job.status == RUNNING and job.stage == STAGES.index("images") and job.seed != seed
     pipe.handle_update(press(42, f"cancel:{job.id}"))
     assert store.get(job.id).status == CANCELLED
 
@@ -118,7 +118,7 @@ def test_stage_failure_retries_then_fails(cfg, store, monkeypatch):
     def boom(*a, **k):
         raise RuntimeError("GPU out of memory")
     monkeypatch.setattr(pipe, "stage_tts", boom)
-    for _ in range(3):
+    for _ in range(1 + 3):            # "check" stage passes, then tts fails 3 times
         pipe.step()
     job = store.recent()[0]
     assert job.status == "failed" and "out of memory" in job.error

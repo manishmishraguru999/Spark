@@ -2,9 +2,25 @@
 
 Telegram से script भेजो → BEAST PC पर voice, images, clips, lip-sync और captions बनते हैं → 480p preview phone पर आता है → ✅ Approve → तय समय पर Instagram + Facebook पर post होता है, और YouTube file phone पर upload के लिए तैयार मिलती है।
 
-**Status:** Code इस repo में test हो चुका है (27 automated tests, Linux पर)। आपके Windows PC पर अभी नहीं चलाया गया है। पहला run नीचे के Step 5 (demo) से करें।
+**Status:** Code इस repo में test हो चुका है (42 automated tests, Linux पर)। आपके Windows PC पर अभी नहीं चलाया गया है। पहला run नीचे के Step 5 (demo) से करें।
 
 ---
+
+## v2: इसे मज़बूत क्या बनाता है
+
+| Layer | क्या करता है |
+|---|---|
+| 🛡️ **Safety gate** (render से पहले) | Blocked शब्द या असली लोगों/brands के नाम मिलें तो job वहीं रुक जाता है (GPU time नहीं जाता)। Health/finance/legal, बहुत छोटी या बहुत लंबी script, और बिना source line वाला caption → warning। Optional: Ollama (PC पर free local AI) से JSON review |
+| 🔍 **Auto QC** (preview से पहले) | Resolution, duration, audio, black frames, खामोशी, loudness (LUFS)। Fail हो तो preview नहीं आएगा, redo buttons आएँगे |
+| 🏷️ **AI label file के अंदर** | MP4 metadata में "AI-generated" लिखा जाता है। Optional: C2PA Content Credentials (`c2patool`, IPTC `digitalSourceType`) |
+| 💾 **Always-on safety** | Disk कम हो तो rendering रुक जाती है और phone पर alert आता है (6 घंटे में एक बार)। 14 दिन पुराने job folders अपने-आप साफ़ होते हैं। Logs rotate होते हैं |
+| 📊 **Daily report** | रोज़ सुबह 09:00 बजे: views (YouTube API key / Instagram insights), queue, disk, ideas |
+| 💡 **Idea bank** | `/idea`, `/ideas`, `/used` |
+| 🩺 **Doctor** | `--doctor` या `/health`: पूरा setup check करके Hindi में बताता है कि क्या ठीक करना है |
+| 🚀 **नया venture 1 command में** | `--new-project NAME`: अलग folders + अलग config (अलग bot, अलग platforms) |
+| 🔌 **15 platforms registry** | `PLATFORMS.md` देखें |
+
+Stages: `check → tts → images → clips → lipsync → assemble → label → qc → preview → (approve) → publish`
 
 ## कैसे काम करता है
 
@@ -28,6 +44,14 @@ Scheduled slot (19:00 IST) → Instagram + Facebook (API) · YouTube (manual fol
 ---
 
 ## Setup (Windows, BEAST)
+
+### ⚡ One-click (सबसे आसान)
+```bat
+powershell -ExecutionPolicy Bypass -File setup.ps1
+```
+यह Python और FFmpeg check करता है, venv बनाता है, packages install करता है, config बनाता है, tokens पूछता है, demo video बनाता है और doctor चलाता है। (Windows पर अभी test नहीं हुआ है। कोई step fail हो तो नीचे के manual steps follow करें।)
+
+### Manual steps
 
 ### Step 1: ज़रूरी software
 1. **Python 3.11+** (python.org से; install करते समय "Add to PATH" ✔)
@@ -110,7 +134,10 @@ venv\Scripts\python run_pipeline.py --config config.yaml --demo
 | Review | Bot पर preview आएगा → ✅ / 🔁 / 🎙️ / ❌ |
 | Status | `/status` |
 | रद्द करना | `/cancel <job_id>` |
-| YouTube | Sync folder से YouTube app में upload |
+| YouTube | Sync folder से YouTube app में upload, फिर `/yt <job_id> <link>` (views report के लिए) |
+| Idea जोड़ना | `/idea अगर धरती घूमना बंद कर दे` · सब देखें: `/ideas` · हो गया: `/used 3` |
+| Report | `/report` (रोज़ 09:00 बजे अपने-आप भी आता है) |
+| PC check | `/health` |
 
 ---
 
@@ -126,7 +153,12 @@ X:\AI_INFLUENCER\
  00_inbox  01_assets  02_jobs  03_renders  04_previews  05_published  06_logs (pipeline.log, jobs.sqlite)  07_secrets
 ```
 
-## अभी क्या नहीं है (अगले versions)
-- रोज़ सुबह views/retention report (YouTube Analytics और Instagram Insights API)
-- Whisper से word-level caption timing (अभी timing text की लंबाई के हिसाब से है)
-- Comments के reply drafts
+## नया venture / project
+```bat
+venv\Scripts\python run_pipeline.py --new-project KidsFreeFacts --base X:/
+venv\Scripts\python run_pipeline.py --config X:/KidsFreeFacts/pipeline_config.yaml --doctor
+```
+हर project की अपनी folders, अपना config और अपना Telegram bot होगा। Code एक ही रहेगा।
+
+## आगे क्या आएगा
+`ROADMAP.md` देखें।

@@ -9,8 +9,11 @@ import traceback
 from pathlib import Path
 
 from . import assemble as asm
+from . import provenance, qc, safety, stats
 from .comfy import ComfyClient
 from .config import Config
+from .doctor import report as doctor_report, run_checks
+from .housekeeping import cleanup_job_dirs, free_gb
 from .jobs import (CANCELLED, FAILED, PUBLISHED, PUBLISHING, REVIEW, RUNNING, SCHEDULED, STAGES, Job,
                    JobStore)
 from .lipsync import cut_audio, lipsync
@@ -25,10 +28,16 @@ log = logging.getLogger("beast")
 MAX_ATTEMPTS = 3
 
 HELP = """BEAST pipeline commands
-/new + script  → नया Reel (format: TITLE/HOOK/VO/SCENE/TALK/CAPTION/TAGS)
-/status        → चल रहे और pending jobs
-/cancel <id>   → job रद्द
-/help          → यह message"""
+/new + script     → नया Reel (format: TITLE/HOOK/VO/SCENE/TALK/CAPTION/TAGS)
+/status           → चल रहे और pending jobs
+/cancel <id>      → job रद्द
+/idea <text>      → idea bank में जोड़ें
+/ideas            → बचे हुए ideas
+/used <n>         → idea नंबर n हो गया
+/yt <id> <link>   → YouTube link जोड़ें (views report के लिए)
+/report           → views + queue report अभी
+/health           → PC और setup की जाँच
+/help             → यह message"""
 
 
 class Pipeline:
@@ -82,6 +91,24 @@ class Pipeline:
         elif text.lower().startswith("/cancel"):
             parts = text.split()
             self.handle_action("cancel", parts[1] if len(parts) > 1 else "")
+        elif text.lower().startswith("/ideas"):
+            ideas = self.store.ideas()
+            self.notify("\n".join(f"{i}. {t}" for i, t, _ in ideas) or "Idea bank खाली है। /idea से जोड़ें।")
+        elif text.lower().startswith("/idea"):
+            body = text[5:].strip()
+            if body:
+                self.notify(f"💡 Idea #{self.store.add_idea(body)} saved")
+        elif text.lower().startswith("/used"):
+            parts = text.split()
+            if len(parts) > 1 and parts[1].isdigit():
+                self.store.mark_idea(int(parts[1]))
+                self.notify(f"✔️ Idea #{parts[1]} used")
+        elif text.lower().startswith("/yt"):
+            self.attach_youtube(text.split()[1:])
+        elif text.lower().startswith("/report"):
+            self.notify(self.report_text())
+        elif text.lower().startswith("/health"):
+            self.notify(doctor_report(run_checks(self.cfg)))
         else:
             self.notify(HELP)
 
@@ -129,6 +156,13 @@ class Pipeline:
         running = self.store.by_status(RUNNING)
         if not running:
             return False
+        min_gb = float(self.cfg.get("housekeeping.min_free_gb", 30))
+        if free_gb(self.cfg.root) < min_gb:
+            last = float(self.store.kv_get("disk_alert", "0") or 0)
+            if self.now() - last > 6 * 3600:
+                self.store.kv_set("disk_alert", str(self.now()))
+                self.notify(f"💾 Disk {free_gb(self.cfg.root):.0f} GB बचा है (< {min_gb:.0f} GB)। Rendering रोकी गई है।")
+            return False
         job = running[0]
         stage = STAGES[job.stage]
         try:
@@ -147,6 +181,24 @@ class Pipeline:
                                       ("🎙️ Voice से", f"redo_voice:{job.id}")]])
         self.store.save(job)
         return True
+
+    def stage_check(self, job: Job, script: Script, d: Path) -> None:
+        errors, warnings = safety.rule_check(script, self.cfg.get("safety", {}) or {})
+        if errors:
+            job.status = FAILED
+            job.error = "; ".join(errors)
+            self.notify(f"🛑 {job.id} रोका गया (safety): {job.error}\nScript ठीक करके /new फिर भेजें।")
+            return
+        ollama = self.cfg.get("safety.ollama", {}) or {}
+        if ollama.get("enabled") and ollama.get("model"):
+            try:
+                review = safety.llm_review(script, ollama)
+                job.results["review"] = review
+                if review.get("risk") in ("medium", "high"):
+                    warnings.append(f"AI review risk: {review['risk']} — " + "; ".join(review.get("issues", [])[:3]))
+            except Exception as exc:          # review is advisory; never block on it
+                warnings.append(f"AI review नहीं चला: {str(exc)[:80]}")
+        job.results["warnings"] = warnings
 
     def stage_tts(self, job: Job, script: Script, d: Path) -> None:
         provider = self.cfg.get("tts.provider", "sarvam")
@@ -219,11 +271,41 @@ class Pipeline:
                      max_seconds=float(v.get("max_seconds", 90)))
         job.results["render"] = str(out)
 
+    def stage_label(self, job: Job, script: Script, d: Path) -> None:
+        render = Path(job.results["render"])
+        note = self.cfg.get("provenance.note", "AI-generated content (synthetic presenter). Made with AI tools.")
+        provenance.tag_metadata(render, script.title, note)
+        tool = self.cfg.get("provenance.c2patool")
+        if tool:
+            provenance.sign_c2pa(render, tool, self.cfg.get("provenance.generator", "BEAST pipeline"),
+                                 self.cfg.get("provenance.source_type", "composite"))
+            job.results["c2pa"] = True
+
+    def stage_qc(self, job: Job, script: Script, d: Path) -> None:
+        v = self.cfg.get("video", {}) or {}
+        report = qc.run_qc(Path(job.results["render"]), self.cfg.get("qc", {}) or {}, int(v.get("width", 1080)),
+                           int(v.get("height", 1920)), float(v.get("max_seconds", 90)))
+        job.results["qc"] = {"status": report.status, "checks": report.checks}
+        if report.status == qc.FAIL:
+            job.status = FAILED
+            job.error = "QC fail"
+            self.notify(f"❌ {job.id} QC fail\n{report.summary()}", buttons=[
+                [("🔁 Images फिर से", f"redo_img:{job.id}"), ("🎙️ Voice से", f"redo_voice:{job.id}")]])
+
+    def review_notes(self, job: Job) -> str:
+        notes = list(job.results.get("warnings", []))
+        q = job.results.get("qc")
+        if q:
+            notes += [f"QC {n}: {d}" for n, lvl, d in q["checks"] if lvl != "pass"]
+        claims = (job.results.get("review") or {}).get("claims_to_verify", [])
+        notes += [f"Verify: {c}" for c in claims[:3]]
+        return ("\n⚠️ " + "\n⚠️ ".join(notes)) if notes else "\n✅ Safety + QC ठीक"
+
     def stage_preview(self, job: Job, script: Script, d: Path) -> None:
         prev = asm.make_preview(Path(job.results["render"]), self.cfg.path("04_previews") / f"{job.id}.mp4")
         job.results["preview"] = str(prev)
         job.status = REVIEW
-        self.notify(f"👀 Review: {script.title}\n\n{self.caption(script)}", video=prev, buttons=[
+        self.notify(f"👀 Review: {script.title}{self.review_notes(job)}\n\n{self.caption(script)}", video=prev, buttons=[
             [("✅ Approve", f"approve:{job.id}")],
             [("🔁 नई images", f"redo_img:{job.id}"), ("🎙️ नई voice", f"redo_voice:{job.id}")],
             [("❌ Cancel", f"cancel:{job.id}")]])
@@ -303,7 +385,65 @@ class Pipeline:
             return f"• {label}: 📲 phone से post करें ({Path(res['path']).name})"
         return f"• {label}: {res.get('url') or res.get('id')}"
 
+    # ---------- reports ----------
+    def attach_youtube(self, args: list[str]) -> None:
+        if len(args) < 2 or not (job := self.store.get(args[0])):
+            self.notify("Use: /yt <job_id> <youtube link>")
+            return
+        vid = stats.youtube_id(args[1])
+        if not vid:
+            self.notify("YouTube link पहचान नहीं आया")
+            return
+        job.results.setdefault("published", {}).setdefault("youtube", {}).update(
+            {"id": vid, "url": f"https://youtube.com/shorts/{vid}"})
+        self.store.save(job)
+        self.notify(f"🔗 {job.id} ↔ YouTube {vid}")
+
+    def report_text(self, days: int = 7) -> str:
+        since = self.now() - days * 86400
+        recent = [j for j in self.store.by_status(PUBLISHED) if j.created_at >= since]
+        yt_key = self.cfg.get("reports.youtube_api_key", "")
+        yt_ids = {j.id: j.results.get("published", {}).get("youtube", {}).get("id") for j in recent}
+        yt = stats.youtube_views(yt_key, [v for v in yt_ids.values() if v]) if yt_key else {}
+        ig_cfg = self.platform_cfg("instagram")
+        lines = [f"📊 पिछले {days} दिन: {len(recent)} published"]
+        for j in recent:
+            parts = []
+            if yt_ids.get(j.id) in yt:
+                parts.append(f"YT {yt[yt_ids[j.id]]:,}")
+            ig_id = j.results.get("published", {}).get("instagram", {}).get("id")
+            if ig_id and ig_cfg.get("access_token"):
+                views = stats.instagram_views(ig_cfg, ig_id)
+                if views is not None:
+                    parts.append(f"IG {views:,}")
+            lines.append(f"• {j.script.get('title', '')[:35]} — {' · '.join(parts) or 'views: link/API नहीं'}")
+        queue = {st: len(self.store.by_status(st)) for st in (RUNNING, REVIEW, SCHEDULED, FAILED)}
+        lines.append("Queue: " + " · ".join(f"{k} {v}" for k, v in queue.items()))
+        lines.append(f"💾 Free disk: {free_gb(self.cfg.root):.0f} GB · 💡 Ideas: {len(self.store.ideas())}")
+        return "\n".join(lines)
+
     def maintenance(self) -> None:
+        self.daily_tasks()
+        self.refresh_token()
+
+    def daily_tasks(self) -> None:
+        """Once a day after reports.time: report to phone + cleanup of old working folders."""
+        from datetime import datetime
+        from zoneinfo import ZoneInfo
+        now = datetime.fromtimestamp(self.now(), ZoneInfo(self.tz))
+        hh, mm = (int(x) for x in str(self.cfg.get("reports.time", "09:00")).split(":"))
+        today = now.strftime("%Y-%m-%d")
+        if (now.hour, now.minute) < (hh, mm) or self.store.kv_get("daily_done") == today:
+            return
+        self.store.kv_set("daily_done", today)
+        finished = {j.id for j in self.store.by_status(PUBLISHED, CANCELLED)}
+        removed = cleanup_job_dirs(self.cfg.path("02_jobs"), finished,
+                                   float(self.cfg.get("housekeeping.keep_job_days", 14)), self.now())
+        if self.cfg.get("reports.enabled", True):
+            extra = f"\n🧹 {len(removed)} पुराने job folders साफ़" if removed else ""
+            self.notify(self.report_text() + extra)
+
+    def refresh_token(self) -> None:
         """Refresh the Instagram long-lived token every ~50 days (Instagram Login only)."""
         ig = self.platform_cfg("instagram")
         if not (self.cfg.get("publish.instagram.enabled") and self.cfg.get("publish.instagram.auto_refresh_token")
