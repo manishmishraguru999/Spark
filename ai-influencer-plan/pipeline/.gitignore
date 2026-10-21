@@ -1,0 +1,8 @@
+config.yaml
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+*.sqlite
+*_token*.json
+*client_secret*.json

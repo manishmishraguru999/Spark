@@ -1,0 +1,88 @@
+# BEAST pipeline config. Copy to config.yaml and edit.
+# Secrets: write "ENV:NAME" and set the value as a Windows environment variable,
+# so tokens never sit in this file.
+
+paths:
+  root: "X:/AI_INFLUENCER"
+
+telegram:
+  bot_token: "ENV:TELEGRAM_BOT_TOKEN"
+  allowed_chat_ids: [123456789]        # सिर्फ़ आपका chat ID; बाकी सबके messages ignore होंगे
+
+tts:
+  provider: sarvam                     # sarvam | command | silent (silent = test tone)
+  sarvam:
+    api_key: "ENV:SARVAM_API_KEY"
+    url: "https://api.sarvam.ai/text-to-speech"
+    model: "bulbul:v3"
+    language_field: "target_language_code"   # docs से confirm करें
+    language: "hi-IN"
+    speaker: null                      # Sarvam docs से speaker का नाम चुनें
+    pace: 1.0
+    max_chars: 2400
+  # Local TTS (e.g. Indic Parler-TTS) — must write audio to {out}
+  command: 'X:/tools/tts/venv/Scripts/python.exe X:/tools/tts/speak.py --text-file "{text_file}" --out "{out}"'
+
+comfyui:
+  enabled: false                       # ComfyUI चालू हो और workflows export हों, तब true करें
+  url: "http://127.0.0.1:8188"         # कभी 0.0.0.0 या internet पर न खोलें
+  image_workflow: "X:/AI_INFLUENCER/01_assets/workflows/scene_image_api.json"
+  clip_workflow: "X:/AI_INFLUENCER/01_assets/workflows/wan22_i2v_api.json"
+  clips_enabled: false
+  max_clips: 2                         # हर Reel में कितने scenes को motion clip बनाना है
+  timeout_sec: 1800
+  style_prefix: "photorealistic, cinematic lighting, vertical 9:16,"
+  negative: "text, watermark, logo, deformed, extra fingers"
+
+character:
+  face_image: "X:/AI_INFLUENCER/01_assets/character/host_face.png"   # पूरी तरह synthetic चेहरा
+
+lipsync:
+  enabled: false
+  talk_seconds: 12
+  timeout_sec: 3600
+  command: 'X:/tools/musetalk/venv/Scripts/python.exe X:/tools/run_lipsync.py --face "{face}" --audio "{audio}" --out "{out}"'
+
+video:
+  width: 1080
+  height: 1920
+  fps: 30
+  max_seconds: 90                      # तीनों platforms पर एक video: 90s से कम रखें
+  font: "Nirmala UI"                   # Windows का Devanagari font
+  font_size: 80
+  music: null                          # licensed track का path, या null
+  music_volume: 0.12
+
+schedule:
+  timezone: "Asia/Kolkata"
+  publish_times: ["19:00"]             # एक दिन में कई slots: ["13:00", "19:00"]
+
+publish:
+  dry_run: true                        # पहले हफ़्ते true रखें; सब ठीक लगे तब false
+  max_hashtags: 3
+  disclosure_line: "🤖 AI-generated character · facts verified"
+  youtube:
+    enabled: true
+    mode: manual                       # manual (audit से पहले) | api
+    manual_sync_dir: "X:/AI_INFLUENCER/05_published/youtube_upload"   # इस folder को Drive/OneDrive से phone पर sync करें
+    client_secrets: "X:/AI_INFLUENCER/07_secrets/youtube_client_secret.json"
+    token_file: "X:/AI_INFLUENCER/07_secrets/youtube_token.json"
+    category_id: "24"
+    privacy: public
+    made_for_kids: false
+    contains_synthetic_media: true
+  instagram:
+    enabled: false
+    graph_host: "https://graph.instagram.com"     # Instagram Login
+    rupload_host: "https://rupload.facebook.com"
+    version: "v25.0"
+    ig_user_id: ""
+    access_token: "ENV:IG_ACCESS_TOKEN"
+    auto_refresh_token: true
+  facebook:
+    enabled: false
+    graph_host: "https://graph.facebook.com"
+    rupload_host: "https://rupload.facebook.com"
+    version: "v25.0"
+    page_id: ""
+    page_access_token: "ENV:FB_PAGE_TOKEN"

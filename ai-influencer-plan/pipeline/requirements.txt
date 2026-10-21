@@ -1,0 +1,6 @@
+requests>=2.31
+PyYAML>=6.0
+tzdata>=2024.1            # Windows पर Asia/Kolkata timezone के लिए ज़रूरी
+# YouTube API mode के लिए (manual mode में ज़रूरी नहीं):
+google-api-python-client>=2.100
+google-auth-oauthlib>=1.2
