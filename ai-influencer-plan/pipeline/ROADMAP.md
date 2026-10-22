@@ -10,13 +10,13 @@
 
 | # | Feature | क्यों | Research basis |
 |---|---|---|---|
-| 3 | **Hook A/B**: एक video के 2 hooks, बेहतर retention वाला अगली बार default | Data से सीखना | INFERENCE |
-| 4 | **Multi-language dubbing**: Hindi master → English/Tamil/Telugu versions, अलग channels पर | Gen Z translated content देखता है (YouTube India report, REPORTED) | Sarvam 11 भाषाएँ (REPORTED) |
-| 5 | **Postiz backend (optional)**: 28+ platforms का open-source scheduler, self-hosted, REST API | जब 5+ platforms API से चलाने हों | AGPL-3.0, Docker 4–8 GB RAM, v2.12+ में Temporal चाहिए (REPORTED: railway.com, mintlify docs) |
-| 7 | **Comment reply drafts**: Telegram पर approve करके reply | Engagement | Human approval ज़रूरी (policy) |
-| 8 | **Instagram Trial Reels via API**: नए formats पहले non-followers पर test | सुरक्षित experiments | API parameter अभी unverified (REPORTED) |
-| 9 | **Media kit generator**: report data से brand deck | Phase 3 monetization | MASTER_PLAN §3 |
-| 10 | **Long-form mode**: 5–8 min videos के लिए chapters के साथ | Report baseline में 8 long videos/month थे | Research report §5 |
+| 1 | **Hook A/B**: एक video के 2 hooks, बेहतर retention वाला अगली बार default | Data से सीखना | INFERENCE |
+| 2 | **Multi-language dubbing**: Hindi master → English/Tamil/Telugu versions, अलग channels पर | Gen Z translated content देखता है (YouTube India report, REPORTED) | Sarvam 11 भाषाएँ (REPORTED) |
+| 3 | **Postiz backend (optional)**: 28+ platforms का open-source scheduler, self-hosted, REST API | जब 5+ platforms API से चलाने हों | AGPL-3.0, Docker 4–8 GB RAM, v2.12+ में Temporal चाहिए (REPORTED: railway.com, mintlify docs) |
+| 4 | **Comment reply drafts**: Telegram पर approve करके reply | Engagement | Human approval ज़रूरी (policy) |
+| 5 | **Instagram Trial Reels via API**: नए formats पहले non-followers पर test | सुरक्षित experiments | API parameter अभी unverified (REPORTED) |
+| 6 | **Media kit generator**: report data से brand deck | Phase 3 monetization | MASTER_PLAN §3 |
+| 7 | **Long-form mode**: 5–8 min videos के लिए chapters के साथ | Report baseline में 8 long videos/month थे | Research report §5 |
 
 ## Design rules (इन्हें कभी न तोड़ें)
 1. **Human approve step** हमेशा रहेगा (mass-produced content पर policy risk)।
