@@ -43,9 +43,11 @@ def publish_instagram(cfg: dict, video: Path, caption: str, session: requests.Se
     host, ver, uid, token = cfg["graph_host"].rstrip("/"), cfg["version"], cfg["ig_user_id"], cfg["access_token"]
     if not (uid and token):
         raise PublishError("Instagram ig_user_id/access_token missing")
-    created = _check(http.post(f"{host}/{ver}/{uid}/media", timeout=60, data={
-        "media_type": "REELS", "upload_type": "resumable", "caption": caption,
-        "share_to_feed": "true", "access_token": token}), "IG container")
+    params = {"media_type": "REELS", "upload_type": "resumable", "caption": caption,
+              "share_to_feed": "true", "access_token": token}
+    if cfg.get("thumb_offset_ms") is not None:          # cover frame position in the Reel
+        params["thumb_offset"] = str(int(cfg["thumb_offset_ms"]))
+    created = _check(http.post(f"{host}/{ver}/{uid}/media", timeout=60, data=params), "IG container")
     cid = created["id"]
     upload_url = created.get("uri") or f"{cfg['rupload_host'].rstrip('/')}/ig-api-upload/{ver}/{cid}"
     _upload(http, upload_url, token, video)

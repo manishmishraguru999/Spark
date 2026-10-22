@@ -61,3 +61,43 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
                      for a, b, t in lines)
     out.write_text(header + events, encoding="utf-8")
     return out
+
+
+# ---------- word-level "pop" captions (faster-whisper, optional) ----------
+Word = tuple[float, float, str]
+
+
+def transcribe_words(audio: Path, model_size: str = "large-v3", device: str = "cuda",
+                     compute_type: str = "float16", language: str = "hi") -> list[Word]:
+    """Word timestamps from faster-whisper (MIT). Raises ImportError if it is not installed."""
+    from faster_whisper import WhisperModel          # optional dependency
+    model = WhisperModel(model_size, device=device, compute_type=compute_type)
+    segments, _ = model.transcribe(str(audio), language=language, word_timestamps=True, vad_filter=True)
+    return [(w.start, w.end, w.word.strip()) for seg in segments for w in (seg.words or []) if w.word.strip()]
+
+
+def group_words(words: list[Word], max_words: int = 3, max_chars: int = 18) -> list[list[Word]]:
+    groups: list[list[Word]] = []
+    cur: list[Word] = []
+    for w in words:
+        text = " ".join(x[2] for x in cur + [w])
+        if cur and (len(cur) >= max_words or len(text) > max_chars or re.search(r"[।?!.,]$", cur[-1][2])):
+            groups.append(cur); cur = []
+        cur.append(w)
+    if cur:
+        groups.append(cur)
+    return groups
+
+
+def pop_events(words: list[Word], highlight: str = "&H00E5FF", max_words: int = 3,
+               max_chars: int = 18) -> list[tuple[float, float, str]]:
+    """One event per spoken word: the whole group is shown, the current word highlighted
+    (ASS colour &HBBGGRR, default warm yellow) and slightly enlarged."""
+    events = []
+    for group in group_words(words, max_words, max_chars):
+        for i, (start, end, _) in enumerate(group):
+            nxt = group[i + 1][0] if i + 1 < len(group) else end
+            parts = [(r"{\c" + highlight + r"&\fscx110\fscy110}" + t + r"{\r}") if j == i else t
+                     for j, (_, _, t) in enumerate(group)]
+            events.append((start, max(nxt, end), " ".join(parts)))
+    return events

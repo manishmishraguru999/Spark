@@ -4,6 +4,7 @@
     python run_pipeline.py --config config.yaml --demo   # one demo video, no Telegram, no publishing
     python run_pipeline.py --config config.yaml --doctor # check the whole setup (Hindi fixes)
     python run_pipeline.py --new-project NAME --base X:/ # new venture: folders + config from template
+    python run_pipeline.py --config config.yaml --benchmark  # voice / lip-sync / face comparison
 """
 from __future__ import annotations
 
@@ -57,6 +58,7 @@ def main() -> int:
     ap.add_argument("--config", default="config.yaml")
     ap.add_argument("--demo", action="store_true", help="make one demo video locally and exit")
     ap.add_argument("--doctor", action="store_true", help="check setup and exit")
+    ap.add_argument("--benchmark", action="store_true", help="compare voices / lip-sync / faces and exit")
     ap.add_argument("--new-project", metavar="NAME")
     ap.add_argument("--base", default="X:/")
     args = ap.parse_args()
@@ -68,6 +70,13 @@ def main() -> int:
         checks = run_checks(cfg)
         print(doctor_report(checks))
         return 0 if all(ok for ok, *_ in checks) else 1
+    if args.benchmark:
+        from beast.benchmark import run_benchmark
+        res = run_benchmark(cfg)
+        for r in res["rows"]:
+            print(f"{'✅' if r['ok'] == 'yes' else '❌'} {r['test']:8s} {r['variant']:30s} {r['seconds']:>7s}s {r['error']}")
+        print(f"\nResults: {res['dir']}\nGrid video: {res['grid'] or '(no lip-sync results)'}\nOrder: {res['order']}")
+        return 0
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s",
                         handlers=[logging.StreamHandler(sys.stdout),
                                   RotatingFileHandler(cfg.path("06_logs") / "pipeline.log", maxBytes=5_000_000,

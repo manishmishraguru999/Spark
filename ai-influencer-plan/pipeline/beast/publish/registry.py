@@ -79,6 +79,9 @@ def manual_handoff(ctx: PublishContext) -> dict:
     dest.mkdir(parents=True, exist_ok=True)
     video = dest / f"{ctx.job_id}.mp4"
     shutil.copy2(ctx.video, video)
+    cover = ctx.video.with_name(f"{ctx.job_id}_cover.jpg")
+    if cover.exists():
+        shutil.copy2(cover, dest / cover.name)
     (dest / f"{ctx.job_id}.txt").write_text(
         f"PLATFORM: {ctx.spec.label}\nTITLE: {ctx.title}\n\nCAPTION:\n{ctx.formatted_caption()}\n\n"
         "Checklist: AI/altered-content label ON · कोई दूसरा watermark नहीं · paid partnership हो तो disclose करें\n",

@@ -12,7 +12,8 @@
 | Deep-research prompts (4 AI, platform-neutral) | Done (`research-prompts/`, copy page artifact) |
 | Local बनाम paid research report + cost model | Done (`claude_research_report.md`, `cost_model.py`) |
 | Pipeline architecture | Done (`10_AUTOMATED_PIPELINE_PHONE_CONTROL.md`) |
-| Pipeline code | v2 done (`pipeline/`): safety gate, auto QC, AI metadata/C2PA, disk guard, daily report, idea bank, doctor, new-project, setup.ps1; 42 tests pass on Linux; **BEAST/Windows पर अभी नहीं चला** |
+| Pipeline code | v3 done (`pipeline/`): v2 + benchmark mode, word-pop captions, trend radar, cover frame, weekly backup; 50 tests pass on Linux; **BEAST/Windows पर अभी नहीं चला** |
+| Master plan | `MASTER_PLAN.md`: phases, decision gates, KPIs, monetization, weekly rhythm |
 | Multi-platform | Plugin registry: YouTube, Instagram, Facebook, Threads, Pinterest, Telegram Channel (API); X, Bluesky, Snapchat, Moj, ShareChat, Josh, WhatsApp Channel, LinkedIn (manual); TikTok blocked (India) — `pipeline/PLATFORMS.md` |
 | Benchmark (voice / lip-sync / face) | Planned, not run |
 | Persona | Realistic, fully synthetic human host; gender undecided; "what-if / अनोखे facts" (provisional) |
@@ -25,7 +26,7 @@
 - BEAST PC always on; all rendering and files stay on PC; phone for control and review
 - User time: weekdays 2–3 h, weekends 5–6 h+
 
-## Next actions (in order)
+## Next actions (in order) — details: MASTER_PLAN.md §7
 1. BEAST पर `pipeline/README.md` के Step 1–5 (demo run)
 2. Telegram bot (Step 6), `dry_run: true` के साथ
 3. Benchmark: 2 synthetic faces × MuseTalk / LatentSync 1.5 / HeyGen free; Sarvam बनाम Indic Parler-TTS

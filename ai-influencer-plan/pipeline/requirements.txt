@@ -4,3 +4,5 @@ tzdata>=2024.1            # Windows पर Asia/Kolkata timezone के लि�
 # YouTube API mode के लिए (manual mode में ज़रूरी नहीं):
 google-api-python-client>=2.100
 google-auth-oauthlib>=1.2
+# Word-level 'pop' captions (captions.mode: words):
+# faster-whisper>=1.1

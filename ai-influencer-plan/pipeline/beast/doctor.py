@@ -95,6 +95,16 @@ def run_checks(cfg: Config, network: bool = True, session: requests.Session | No
             except (requests.RequestException, ValueError):
                 ok = False
             add(ok, "Telegram token valid", "BotFather से नया token लें")
+    if cfg.get("captions.mode") == "words":
+        try:
+            import faster_whisper  # noqa: F401
+            add(True, "faster-whisper (word captions)")
+        except ImportError:
+            add(False, "faster-whisper (word captions)", "venv\\Scripts\\pip install faster-whisper (या captions.mode: lines)")
+    if cfg.get("backup.dest"):
+        from pathlib import Path as _P
+        add(_P(cfg.get("backup.dest")).anchor != cfg.root.anchor or not cfg.root.anchor,
+            f"Backup दूसरी drive पर: {cfg.get('backup.dest')}", "Backup दूसरी drive पर रखें (एक drive खराब होने पर दोनों न जाएँ)")
     if cfg.get("provenance.c2patool"):
         add(os.path.exists(cfg.get("provenance.c2patool")), "c2patool", "provenance.c2patool का path सही करें")
     return out

@@ -2,11 +2,11 @@
 
 Telegram से script भेजो → BEAST PC पर voice, images, clips, lip-sync और captions बनते हैं → 480p preview phone पर आता है → ✅ Approve → तय समय पर Instagram + Facebook पर post होता है, और YouTube file phone पर upload के लिए तैयार मिलती है।
 
-**Status:** Code इस repo में test हो चुका है (42 automated tests, Linux पर)। आपके Windows PC पर अभी नहीं चलाया गया है। पहला run नीचे के Step 5 (demo) से करें।
+**Status:** Code इस repo में test हो चुका है (50 automated tests, Linux पर)। आपके Windows PC पर अभी नहीं चलाया गया है। पहला run नीचे के Step 5 (demo) से करें।
 
 ---
 
-## v2: इसे मज़बूत क्या बनाता है
+## v3: इसे मज़बूत क्या बनाता है
 
 | Layer | क्या करता है |
 |---|---|
@@ -19,6 +19,11 @@ Telegram से script भेजो → BEAST PC पर voice, images, clips, li
 | 🩺 **Doctor** | `--doctor` या `/health`: पूरा setup check करके Hindi में बताता है कि क्या ठीक करना है |
 | 🚀 **नया venture 1 command में** | `--new-project NAME`: अलग folders + अलग config (अलग bot, अलग platforms) |
 | 🔌 **15 platforms registry** | `PLATFORMS.md` देखें |
+| ✨ **Word-pop captions** | `captions.mode: words` → faster-whisper से हर शब्द की timing, बोला जा रहा शब्द पीले रंग में highlight (Hindi सही render होता है) |
+| 🖼️ **Cover frame** | हर video का साफ़ frame `_cover.jpg` के रूप में; Instagram पर `thumb_offset_ms` |
+| 🧪 **Benchmark mode** | `--benchmark`: हर voice और हर face × lip-sync tool का test, `grid.mp4` + `results.csv` (rating columns के साथ) |
+| 🔥 **Trend radar** | `/trends` या रोज़ सुबह: India trending + आपके keywords, 💡 button से सीधे idea bank में |
+| 🗄️ **Weekly backup** | दूसरी drive पर assets, renders, records और database (`/backup`) |
 
 Stages: `check → tts → images → clips → lipsync → assemble → label → qc → preview → (approve) → publish`
 
@@ -138,6 +143,8 @@ venv\Scripts\python run_pipeline.py --config config.yaml --demo
 | Idea जोड़ना | `/idea अगर धरती घूमना बंद कर दे` · सब देखें: `/ideas` · हो गया: `/used 3` |
 | Report | `/report` (रोज़ 09:00 बजे अपने-आप भी आता है) |
 | PC check | `/health` |
+| Trending ideas | `/trends` → 💡 button |
+| Backup अभी | `/backup` |
 
 ---
 
@@ -152,6 +159,14 @@ venv\Scripts\python -m pytest -q tests
 X:\AI_INFLUENCER\
  00_inbox  01_assets  02_jobs  03_renders  04_previews  05_published  06_logs (pipeline.log, jobs.sqlite)  07_secrets
 ```
+
+## Benchmark (persona lock से पहले ज़रूरी)
+1. `config.yaml` के `benchmark:` में 2 चेहरे, voices और lip-sync commands दें।
+2. यह command चलाएँ:
+   ```bat
+   venv\Scripts\python run_pipeline.py --config config.yaml --benchmark
+   ```
+3. `08_benchmark\<time>\grid.mp4` phone पर देखें। `results.csv` में 3 लोगों से 1–5 ratings भरवाएँ। Gate का नियम `MASTER_PLAN.md` के Phase 0 में है।
 
 ## नया venture / project
 ```bat

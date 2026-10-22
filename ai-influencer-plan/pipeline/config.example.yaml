@@ -53,6 +53,36 @@ video:
   music: null                          # licensed track का path, या null
   music_volume: 0.12
 
+captions:
+  mode: lines                          # lines | words (words = faster-whisper word timing + highlight "pop" style)
+  model: "large-v3"                    # words mode: pip install faster-whisper
+  device: "cuda"
+  compute_type: "float16"              # 12GB VRAM पर कम memory चाहिए तो "int8_float16"
+  language: "hi"
+  max_words: 3
+  highlight: "&H00E5FF"                # ASS colour &HBBGGRR (पीला)
+
+benchmark:                             # python run_pipeline.py --benchmark
+  script: ""                           # खाली = default कठिन Hindi words वाली script
+  talk_seconds: 10
+  faces: ["X:/AI_INFLUENCER/01_assets/character/face_A.png", "X:/AI_INFLUENCER/01_assets/character/face_B.png"]
+  voices:
+    - {name: sarvam_v3, provider: sarvam}
+    - {name: local_parler, provider: command}
+  lipsync:
+    - {name: musetalk, command: 'X:/tools/musetalk/venv/Scripts/python.exe X:/tools/run_musetalk.py --face "{face}" --audio "{audio}" --out "{out}"'}
+    - {name: latentsync15, command: 'X:/tools/latentsync/venv/Scripts/python.exe X:/tools/run_latentsync.py --face "{face}" --audio "{audio}" --out "{out}"'}
+
+trends:
+  enabled: false                       # true = रोज़ सुबह report के साथ trending ideas
+  region: "IN"
+  top: 5
+  keywords: ["what if hindi", "amazing facts hindi", "अगर ऐसा हो जाए तो"]   # max 3 (हर एक 100 API units)
+
+backup:
+  dest: ""                             # दूसरी drive, जैसे "D:/BACKUP/AI_INFLUENCER" (आप तय करें)
+  every_days: 7
+
 safety:                              # render से पहले script check (GPU time बचता है)
   blocked_words: []                    # ये शब्द हों तो job रुक जाएगा
   blocked_names: []                    # असली लोग/brands जिनका नाम नहीं आना चाहिए (personality rights)
@@ -109,6 +139,7 @@ publish:
     version: "v25.0"
     ig_user_id: ""
     access_token: "ENV:IG_ACCESS_TOKEN"
+    thumb_offset_ms: null                 # Reel cover frame (ms), जैसे 1500
     auto_refresh_token: true
   facebook:
     enabled: false

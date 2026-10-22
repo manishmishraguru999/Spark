@@ -49,7 +49,8 @@ def plan_segments(total: float, talk_clip: Path | None, talk_sec: float, scene_s
 def assemble(job_dir: Path, voice: Path, scene_sources: list[Path], out: Path, *, caption_text: str,
              talk_clip: Path | None = None, talk_sec: float = 12.0, music: Path | None = None,
              music_volume: float = 0.12, width: int = 1080, height: int = 1920, fps: int = 30,
-             font: str = "Nirmala UI", font_size: int = 80, max_seconds: float = 90.0) -> Path:
+             font: str = "Nirmala UI", font_size: int = 80, max_seconds: float = 90.0,
+             caption_events: list[tuple[float, float, str]] | None = None) -> Path:
     ff = ffmpeg_bin()
     total = min(duration(voice), max_seconds)
     seg_dir = job_dir / "segments"
@@ -59,7 +60,8 @@ def assemble(job_dir: Path, voice: Path, scene_sources: list[Path], out: Path, *
     (seg_dir / "list.txt").write_text("".join(f"file '{p.name}'\n" for p in segments), encoding="utf-8")
     run([ff, "-y", "-f", "concat", "-safe", "0", "-i", "list.txt", "-c", "copy", "visual.mp4"], cwd=seg_dir)
 
-    write_ass(timed_lines(caption_text, total), job_dir / "captions.ass", width, height, font, font_size)
+    events = caption_events if caption_events else timed_lines(caption_text, total)
+    write_ass(events, job_dir / "captions.ass", width, height, font, font_size)
     inputs = [ff, "-y", "-i", str(seg_dir / "visual.mp4"), "-i", str(voice)]
     if music:
         inputs += ["-stream_loop", "-1", "-i", str(music)]
@@ -72,6 +74,12 @@ def assemble(job_dir: Path, voice: Path, scene_sources: list[Path], out: Path, *
                   "-t", f"{total:.3f}", "-c:v", "libx264", "-preset", "medium", "-crf", "18",
                   "-c:a", "aac", "-b:a", "192k", "-ar", "48000", "-movflags", "+faststart", str(out.resolve())],
         cwd=job_dir)
+    return out
+
+
+def make_cover(src: Path, out: Path) -> Path:
+    """Pick a representative, non-blurry frame (ffmpeg thumbnail filter) as the cover image."""
+    run([ffmpeg_bin(), "-y", "-i", str(src), "-vf", "thumbnail=90", "-frames:v", "1", "-q:v", "2", str(out)])
     return out
 
 

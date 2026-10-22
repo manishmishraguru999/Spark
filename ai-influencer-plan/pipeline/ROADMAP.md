@@ -2,22 +2,20 @@
 
 **Research date:** 2026-10-21 · **Labels:** VERIFIED · REPORTED · INFERENCE
 
-## Done (v2)
-Safety gate · Auto QC · AI metadata + optional C2PA · disk guard + cleanup · daily report · idea bank · doctor · new-project · 15-platform registry · one-click setup.
+## Done
+- **v2:** Safety gate · Auto QC · AI metadata + optional C2PA · disk guard + cleanup · daily report · idea bank · doctor · new-project · 15-platform registry · one-click setup
+- **v3:** Benchmark mode · Whisper word-pop captions · Trend radar · Cover frame + IG thumb_offset · Weekly backup
 
 ## Next (priority order)
 
 | # | Feature | क्यों | Research basis |
 |---|---|---|---|
-| 1 | **Benchmark mode** (`--benchmark`): एक script, 2 चेहरे, 3 lip-sync tools, side-by-side video | Realistic चेहरे पर lip-sync की quality सबसे बड़ा risk है | Research report §6 |
-| 2 | **Whisper word-level captions** | Captions आवाज़ के साथ बिल्कुल sync होंगे | Whisper MIT (VERIFIED) |
 | 3 | **Hook A/B**: एक video के 2 hooks, बेहतर retention वाला अगली बार default | Data से सीखना | INFERENCE |
 | 4 | **Multi-language dubbing**: Hindi master → English/Tamil/Telugu versions, अलग channels पर | Gen Z translated content देखता है (YouTube India report, REPORTED) | Sarvam 11 भाषाएँ (REPORTED) |
 | 5 | **Postiz backend (optional)**: 28+ platforms का open-source scheduler, self-hosted, REST API | जब 5+ platforms API से चलाने हों | AGPL-3.0, Docker 4–8 GB RAM, v2.12+ में Temporal चाहिए (REPORTED: railway.com, mintlify docs) |
-| 6 | **Trend radar**: रोज़ vidIQ / YouTube data से rising topics → idea bank में suggestions | Ideas कभी खत्म न हों | vidIQ connector (VERIFIED, इस research में इस्तेमाल हुआ) |
 | 7 | **Comment reply drafts**: Telegram पर approve करके reply | Engagement | Human approval ज़रूरी (policy) |
-| 8 | **Cover frame picker**: सबसे साफ़ चेहरे वाला frame thumbnail/cover बने | CTR | INFERENCE |
-| 9 | **Weekly backup** to second drive | Always-on PC की safety | Destination user तय करेंगे |
+| 8 | **Instagram Trial Reels via API**: नए formats पहले non-followers पर test | सुरक्षित experiments | API parameter अभी unverified (REPORTED) |
+| 9 | **Media kit generator**: report data से brand deck | Phase 3 monetization | MASTER_PLAN §3 |
 | 10 | **Long-form mode**: 5–8 min videos के लिए chapters के साथ | Report baseline में 8 long videos/month थे | Research report §5 |
 
 ## Design rules (इन्हें कभी न तोड़ें)

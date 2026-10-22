@@ -9,7 +9,8 @@ import traceback
 from pathlib import Path
 
 from . import assemble as asm
-from . import provenance, qc, safety, stats
+from . import captions, provenance, qc, safety, stats, trends
+from .backup import run_backup
 from .comfy import ComfyClient
 from .config import Config
 from .doctor import report as doctor_report, run_checks
@@ -36,6 +37,8 @@ HELP = """BEAST pipeline commands
 /used <n>         → idea नंबर n हो गया
 /yt <id> <link>   → YouTube link जोड़ें (views report के लिए)
 /report           → views + queue report अभी
+/trends           → आज के trending ideas (YouTube API key चाहिए)
+/backup           → अभी backup
 /health           → PC और setup की जाँच
 /help             → यह message"""
 
@@ -107,12 +110,19 @@ class Pipeline:
             self.attach_youtube(text.split()[1:])
         elif text.lower().startswith("/report"):
             self.notify(self.report_text())
+        elif text.lower().startswith("/trends"):
+            self.send_trends()
+        elif text.lower().startswith("/backup"):
+            self.do_backup(force=True)
         elif text.lower().startswith("/health"):
             self.notify(doctor_report(run_checks(self.cfg)))
         else:
             self.notify(HELP)
 
     def handle_action(self, action: str, job_id: str) -> None:
+        if action == "trend":
+            self.trend_to_idea(job_id)
+            return
         job = self.store.get(job_id)
         if not job:
             self.notify(f"Job {job_id} नहीं मिला")
@@ -263,7 +273,9 @@ class Pipeline:
         v = self.cfg.get("video", {}) or {}
         music = v.get("music")
         talk = job.results.get("talk_clip")
+        events = self.word_captions(job, d)
         asm.assemble(d, Path(job.results["voice"]), sources, out, caption_text=script.narration,
+                     caption_events=events,
                      talk_clip=Path(talk) if talk else None, talk_sec=float(self.cfg.get("lipsync.talk_seconds", 12)),
                      music=Path(music) if music else None, music_volume=float(v.get("music_volume", 0.12)),
                      width=int(v.get("width", 1080)), height=int(v.get("height", 1920)), fps=int(v.get("fps", 30)),
@@ -271,8 +283,29 @@ class Pipeline:
                      max_seconds=float(v.get("max_seconds", 90)))
         job.results["render"] = str(out)
 
+    def word_captions(self, job: Job, d: Path):
+        """captions.mode: words → faster-whisper word timing + pop style; falls back to line captions."""
+        c = self.cfg.get("captions", {}) or {}
+        if c.get("mode", "lines") != "words":
+            return None
+        cache = d / "words.json"
+        try:
+            if cache.exists():
+                words = [tuple(w) for w in json.loads(cache.read_text(encoding="utf-8"))]
+            else:
+                words = captions.transcribe_words(Path(job.results["voice"]), c.get("model", "large-v3"),
+                                                  c.get("device", "cuda"), c.get("compute_type", "float16"),
+                                                  c.get("language", "hi"))
+                cache.write_text(json.dumps(words, ensure_ascii=False), encoding="utf-8")
+            return captions.pop_events(words, c.get("highlight", "&H00E5FF"), int(c.get("max_words", 3)),
+                                       int(c.get("max_chars", 18))) or None
+        except Exception as exc:                     # missing package / model → plain captions
+            job.results.setdefault("warnings", []).append(f"word captions नहीं बने ({str(exc)[:60]}), line captions लगे")
+            return None
+
     def stage_label(self, job: Job, script: Script, d: Path) -> None:
         render = Path(job.results["render"])
+        job.results["cover"] = str(asm.make_cover(render, self.cfg.path("03_renders") / f"{job.id}_cover.jpg"))
         note = self.cfg.get("provenance.note", "AI-generated content (synthetic presenter). Made with AI tools.")
         provenance.tag_metadata(render, script.title, note)
         tool = self.cfg.get("provenance.c2patool")
@@ -442,6 +475,55 @@ class Pipeline:
         if self.cfg.get("reports.enabled", True):
             extra = f"\n🧹 {len(removed)} पुराने job folders साफ़" if removed else ""
             self.notify(self.report_text() + extra)
+        if self.cfg.get("trends.enabled", False):
+            self.send_trends()
+        self.do_backup()
+
+    # ---------- trend radar ----------
+    def send_trends(self) -> None:
+        key = self.cfg.get("reports.youtube_api_key", "")
+        if not key:
+            self.notify("Trend radar के लिए reports.youtube_api_key (YOUTUBE_API_KEY) चाहिए")
+            return
+        try:
+            items = trends.digest(key, self.cfg.get("trends.keywords", []) or [], self.cfg.get("trends.region", "IN"),
+                                  int(self.cfg.get("trends.top", 5)), now=self.now())
+        except Exception as exc:
+            self.notify(f"⚠️ Trend radar fail: {str(exc)[:200]}")
+            return
+        if not items:
+            self.notify("आज कोई trend नहीं मिला")
+            return
+        self.store.kv_set("trend_candidates", json.dumps(items, ensure_ascii=False))
+        lines = [f"{i + 1}. {it['title'][:70]} · {it['views']:,} views · [{it['keyword']}]" for i, it in enumerate(items)]
+        self.notify("🔥 Trend radar (सिर्फ़ inspiration — copy नहीं, अपना angle):\n" + "\n".join(lines),
+                    buttons=[[(f"💡 {i + 1}", f"trend:{i}") for i in range(len(items))]])
+
+    def trend_to_idea(self, index: str) -> None:
+        items = json.loads(self.store.kv_get("trend_candidates", "[]") or "[]")
+        if not index.isdigit() or int(index) >= len(items):
+            self.notify("Trend नहीं मिला, /trends फिर चलाएँ")
+            return
+        it = items[int(index)]
+        n = self.store.add_idea(f"{it['title']} — अपना what-if angle सोचें (ref: {it['url']})")
+        self.notify(f"💡 Idea #{n} saved")
+
+    # ---------- backup ----------
+    def do_backup(self, force: bool = False) -> None:
+        dest = self.cfg.get("backup.dest", "")
+        if not dest:
+            if force:
+                self.notify("backup.dest config में set नहीं है")
+            return
+        last = float(self.store.kv_get("backup_done", "0") or 0)
+        if not force and self.now() - last < float(self.cfg.get("backup.every_days", 7)) * 86400:
+            return
+        try:
+            counts = run_backup(self.cfg.root, Path(dest), self.cfg.path("06_logs") / "jobs.sqlite")
+            self.store.kv_set("backup_done", str(self.now()))
+            self.notify(f"🗄️ Backup हो गया → {dest} ({sum(counts.values())} files)")
+        except Exception as exc:
+            self.notify(f"⚠️ Backup fail: {str(exc)[:200]}")
 
     def refresh_token(self) -> None:
         """Refresh the Instagram long-lived token every ~50 days (Instagram Login only)."""
